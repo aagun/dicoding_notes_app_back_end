@@ -1,4 +1,6 @@
 const { nanoid } = require("nanoid");
+const InvariantException = "../../exceptions/InvariantException";
+const NotFoundException = "../../exceptions/NotFoundException";
 
 class NotesService {
   constructor() {
@@ -27,7 +29,7 @@ class NotesService {
       return id;
     }
 
-    throw new Error("Catatan gagal ditambahkan");
+    throw new InvariantException("Catatan gagal ditambahkan");
   }
 
   getNotes() {
@@ -41,7 +43,7 @@ class NotesService {
       return note;
     }
 
-    throw new Error("Catatan tidak ditemukan");
+    throw new NotFoundException("Catatan tidak ditemukan");
   }
 
   editNoteById(id, { title, body, tags }) {
@@ -74,7 +76,9 @@ class NotesService {
 
   validateIndexNote(index, message) {
     if (index < 0) {
-      throw new Error(`Gagal ${message} catatan. Id ${id} tidak ditemukan`);
+      throw new NotFoundException(
+        `Gagal ${message} catatan. Id ${id} tidak ditemukan`
+      );
     }
   }
 }

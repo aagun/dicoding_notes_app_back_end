@@ -1,6 +1,9 @@
+const ClientError = require("../../exceptions/ClientException");
+
 class NotesHandler {
-  constructor(service) {
+  constructor(service, validator) {
     this._service = service;
+    this._validator = validator;
     this.postNoteHandler = this.postNoteHandler.bind(this);
     this.getNotesHandler = this.getNotesHandler.bind(this);
     this.getNoteByIdHandler = this.getNoteByIdHandler.bind(this);
@@ -10,6 +13,8 @@ class NotesHandler {
 
   postNoteHandler(request, h) {
     try {
+      this._validator.validateNotePayload(request.payload);
+
       const { title = "untitle", tags, body } = request.payload;
       const noteId = this._service.addNote({ title, tags, body });
       const response = h.response({
@@ -23,13 +28,7 @@ class NotesHandler {
       response.code(201);
       return response;
     } catch (error) {
-      const response = h.response({
-        status: "fail",
-        message: error.message,
-      });
-
-      response.code(400);
-      return response;
+      return this.responseExceptionHelper(h, error);
     }
   }
 
@@ -56,18 +55,14 @@ class NotesHandler {
         },
       };
     } catch (error) {
-      const response = h.response({
-        status: "fail",
-        message: error.message,
-      });
-
-      response.code(404);
-      return response;
+      return this.responseExceptionHelper(h, error);
     }
   }
 
   putNoteByIdHandler(request, h) {
     try {
+      this._validator.validateNotePayload(request.payload);
+
       const { id } = request.params;
       const note = this._service.updateNote(id, request.payload);
       return {
@@ -78,13 +73,7 @@ class NotesHandler {
         },
       };
     } catch (error) {
-      const response = h.response({
-        status: "fail",
-        message: error.message,
-      });
-
-      response.code(404);
-      return response;
+      return this.responseExceptionHelper(h, error);
     }
   }
 
@@ -100,14 +89,36 @@ class NotesHandler {
         },
       };
     } catch (error) {
-      const response = h.response({
-        status: "fail",
-        message: error.message,
-      });
-
-      response.code(404);
-      return response;
+      return this.responseExceptionHelper(h, error);
     }
+  }
+
+  responseExceptionHelper(h, error) {
+    if (error instanceof ClientError) {
+      return this.clientProcessingErrorHandler(h, error);
+    }
+
+    return this.serverProcessingErrorHandler(h, error);
+  }
+
+  clientProcessingErrorHandler(h, error) {
+    const response = h.response({
+      status: "fail",
+      message: error.message,
+    });
+    response.code(error.statusCode);
+    return response;
+  }
+
+  serverProcessingErrorHandler(h, error) {
+    const response = h.response({
+      status: "error",
+      message: "Maaf, terjadi kegagalan pada server kami.",
+    });
+
+    response.code(500);
+    console.error(error);
+    return response;
   }
 }
 
