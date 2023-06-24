@@ -4,5 +4,9 @@ node_modules/
 # Node
 package-lock.json
 
+# Envirotnment
+.env
+.prod.env
+
 # Eslint
 .eslintrc.json
